@@ -67,7 +67,7 @@ class TrieNode {
    * @param key_char Key char of child node.
    * @return True if this trie node has a child with given key, false otherwise.
    */
-  bool HasChild(char key_char) const { return children_.count(key_char); }
+  bool HasChild(char key_char) const { return children_.count(key_char) == 0; }
 
   /**
    * TODO(P0): Add implementation
@@ -118,9 +118,10 @@ class TrieNode {
    */
   std::unique_ptr<TrieNode> *InsertChildNode(char key_char, std::unique_ptr<TrieNode> &&child) {
     // If specified key_char already exists in children_, return nullptr.
-    if (children_.count(key_char)) return nullptr;
     // If parameter `child`'s key char is different than parameter`key_char`, return nullptr.
-    if (child->GetKeyChar() != key_char) return nullptr;
+    if (children_.count(key_char) > 0 || child->GetKeyChar() != key_char) {
+      return nullptr;
+    }
     children_[key_char] = std::move(child);
     return &children_[key_char];
   }
@@ -137,7 +138,7 @@ class TrieNode {
    */
   std::unique_ptr<TrieNode> *GetChildNode(char key_char) {
     // If child node for given key char does not exist, return nullptr.
-    return children_.count(key_char) ? &children_[key_char] : nullptr;
+    return children_.count(key_char) > 0 ? &children_[key_char] : nullptr;
   }
 
   /**
@@ -149,7 +150,9 @@ class TrieNode {
    * @param key_char Key char of child node to be removed
    */
   void RemoveChildNode(char key_char) {
-    if (children_.count(key_char)) children_.erase(key_char);
+    if (children_.count(key_char) > 0) {
+      children_.erase(key_char);
+    }
   }
 
   /**
@@ -400,7 +403,7 @@ class Trie {
       return {};
     }
     // If the given type T is not the same as the value type stored in TrieNodeWithValue, set success to false.
-    TrieNodeWithValue<T> *terminal_node = dynamic_cast<TrieNodeWithValue<T> *>(curr);
+    auto terminal_node = dynamic_cast<TrieNodeWithValue<T> *>(curr);
     if (terminal_node == nullptr) {
       *success = false;
       return {};
