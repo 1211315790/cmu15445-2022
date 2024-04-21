@@ -37,7 +37,7 @@ class TrieNode {
    *
    * @param key_char Key character of this trie node
    */
-  explicit TrieNode(char key_char) : key_char_(key_char), is_end_(false) {}
+  explicit TrieNode(char key_char) : key_char_(key_char) {}
 
   /**
    * TODO(P0): Add implementation
@@ -67,7 +67,7 @@ class TrieNode {
    * @param key_char Key char of child node.
    * @return True if this trie node has a child with given key, false otherwise.
    */
-  bool HasChild(char key_char) const { return children_.count(key_char) ? true : false; }
+  bool HasChild(char key_char) const { return children_.count(key_char); }
 
   /**
    * TODO(P0): Add implementation
@@ -77,7 +77,7 @@ class TrieNode {
    *
    * @return True if this trie node has any child node, false if it has no child node.
    */
-  bool HasChildren() const { return children_.empty() ? false : true; }
+  bool HasChildren() const { return children_.empty(); }
 
   /**
    * TODO(P0): Add implementation
@@ -86,7 +86,7 @@ class TrieNode {
    *
    * @return True if is_end_ flag is true, false if is_end_ is false.
    */
-  bool IsEndNode() const { return is_end_ ? true : false; }
+  bool IsEndNode() const { return is_end_; }
 
   /**
    * TODO(P0): Add implementation
@@ -248,7 +248,10 @@ class Trie {
    * @brief Construct a new Trie object. Initialize the root node with '\0'
    * character.
    */
-  Trie() { root_ = std::make_unique<TrieNode>('\0'); }
+  Trie() {
+    root_ = std::make_unique<TrieNode>('\0');
+    root_->SetEndNode(true);
+  }
 
   /**
    * TODO(P0): Add implementation
@@ -342,20 +345,18 @@ class Trie {
     if (!curr->IsEndNode()) {
       return false;  // Key does not exist
     }
-
-    // Mark the terminal node as non-end
     curr->SetEndNode(false);
-
+    // Mark the terminal node as non-end
+    path.push_back(curr);
     // Remove nodes with no children
     for (auto it = path.rbegin(); it != path.rend(); ++it) {
-      if (!(*it)->HasChildren() && !(*it)->IsEndNode()) {
+      if (!(*it)->HasChildren() && !(*it)->IsEndNode() && (*it) != root_.get()) {
         TrieNode *parent = *(it + 1);
         parent->RemoveChildNode((*it)->GetKeyChar());
       } else {
         break;
       }
     }
-
     return true;
   }
 
