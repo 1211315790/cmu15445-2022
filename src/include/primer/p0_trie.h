@@ -13,12 +13,12 @@
 #pragma once
 #include <memory>
 #include <queue>
+#include <shared_mutex>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
-
 #include "common/exception.h"
 #include "common/rwlatch.h"
 
@@ -67,7 +67,7 @@ class TrieNode {
    * @param key_char Key char of child node.
    * @return True if this trie node has a child with given key, false otherwise.
    */
-  bool HasChild(char key_char) const { return children_.count(key_char) == 0; }
+  bool HasChild(char key_char) const { return children_.count(key_char) > 0; }
 
   /**
    * TODO(P0): Add implementation
@@ -77,7 +77,7 @@ class TrieNode {
    *
    * @return True if this trie node has any child node, false if it has no child node.
    */
-  bool HasChildren() const { return children_.empty(); }
+  bool HasChildren() const { return !children_.empty(); }
 
   /**
    * TODO(P0): Add implementation
@@ -231,6 +231,7 @@ class TrieNodeWithValue : public TrieNode {
    * @return Value of type T stored in this node
    */
   T GetValue() const { return value_; }
+  void SetValue(T value) { value_ = value; }
 };
 
 /**
@@ -243,6 +244,7 @@ class Trie {
   std::unique_ptr<TrieNode> root_;
   /* Read-write lock for the trie */
   ReaderWriterLatch latch_;
+  std::shared_mutex rw_mutex_{};
 
  public:
   /**
@@ -284,6 +286,7 @@ class Trie {
    */
   template <typename T>
   bool Insert(const std::string &key, T value) {
+    std::lock_guard<std::shared_mutex> lck(rw_mutex_);
     // key is empty.
     if (key.empty()) {
       return false;
@@ -295,10 +298,7 @@ class Trie {
       // Create new node if not exists
       if (!curr->HasChild(c)) {
         std::unique_ptr<TrieNode> new_node = std::make_unique<TrieNode>(c);
-        // Insertion failed
-        if (curr->InsertChildNode(c, std::move(new_node)) == nullptr) {
-          return false;
-        }
+        curr->InsertChildNode(c, std::move(new_node));
       }
       parent = curr;
       curr = curr->GetChildNode(c)->get();
@@ -332,6 +332,7 @@ class Trie {
    * @return True if the key exists and is removed, false otherwise
    */
   bool Remove(const std::string &key) {
+    std::lock_guard<std::shared_mutex> lck(rw_mutex_);
     if (key.empty()) {
       return false;
     }
@@ -348,8 +349,8 @@ class Trie {
     if (!curr->IsEndNode()) {
       return false;  // Key does not exist
     }
-    curr->SetEndNode(false);
     // Mark the terminal node as non-end
+    curr->SetEndNode(false);
     path.push_back(curr);
     // Remove nodes with no children
     for (auto it = path.rbegin(); it != path.rend(); ++it) {
@@ -383,6 +384,7 @@ class Trie {
    */
   template <typename T>
   T GetValue(const std::string &key, bool *success) {
+    std::shared_lock lck(rw_mutex_);
     // If key is empty, set success to false.
     if (key.empty()) {
       *success = false;
