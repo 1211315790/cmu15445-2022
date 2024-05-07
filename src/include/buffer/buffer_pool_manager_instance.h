@@ -54,6 +54,12 @@ class BufferPoolManagerInstance : public BufferPoolManager {
 
  protected:
   /**
+   * @brief  Get a frame from the buffer pool
+   * @param frame_id  The frame id of the frame got from the buffer pool
+   * @return  true if the frame is successfully got, false otherwise
+   */
+  auto GetFrame(frame_id_t *frame_id) -> bool;
+  /**
    * TODO(P1): Add implementation
    *
    * @brief Create a new page in the buffer pool. Set page_id to the new page's id, or nullptr if all frames
