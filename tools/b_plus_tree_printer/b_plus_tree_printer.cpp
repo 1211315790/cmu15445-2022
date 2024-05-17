@@ -12,12 +12,12 @@
 
 #include <cstdio>
 #include <iostream>
-
+#include <random>
+#include <vector>
 #include "buffer/buffer_pool_manager_instance.h"
 #include "common/logger.h"
 #include "storage/index/b_plus_tree.h"
 #include "test_util.h"  // NOLINT
-
 using bustub::BPlusTree;
 using bustub::BufferPoolManager;
 using bustub::BufferPoolManagerInstance;
@@ -46,7 +46,13 @@ auto UsageMessage() -> std::string {
       "> ";
   return message;
 }
-
+int64_t generateRandomKey(int i) {
+  // 使用当前时间初始化随机数生成器种子
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<> dis(-100, 100);  // 调整范围以适应你的需求
+  return dis(gen);
+}
 auto main(int argc, char **argv) -> int {
   int64_t key = 0;
   GenericKey<8> index_key;
@@ -81,7 +87,29 @@ auto main(int argc, char **argv) -> int {
   BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator, leaf_max_size, internal_max_size);
   // create transaction
   auto *transaction = new Transaction(0);
+  std::vector<decltype(key)> keys;
+
+  for (size_t i = 0; i < 10000; i++) {
+    keys.push_back(generateRandomKey(1));
+    std::cout << keys.back() << " ";
+  }
+  std::cout << std::endl;
+  std::stringstream ss;
+  std::streambuf *cinbuf = std::cin.rdbuf();
+  std::cin.rdbuf(ss.rdbuf());  // 替换cin的输入流
+  for (auto key : keys) {
+    ss << "i " << key << std::endl;
+    ss << "g test.dot" << std::endl;
+  }
+  // std::shuffle(keys.begin(), keys.end(), std::mt19937(std::random_device()()));
+  // for (auto key : keys) {
+  //   ss << "d " << key << std::endl;
+  //   ss << "g test.dot" << std::endl;
+  // }
   while (!quit) {
+    if (ss.peek() == EOF) {
+      std::cin.rdbuf(cinbuf);
+    }
     std::cout << "> ";
     std::cin >> instruction;
     if (!std::cin) {
@@ -126,6 +154,7 @@ auto main(int argc, char **argv) -> int {
         break;
     }
   }
+
   bpm->UnpinPage(header_page->GetPageId(), true);
   delete bpm;
   delete transaction;

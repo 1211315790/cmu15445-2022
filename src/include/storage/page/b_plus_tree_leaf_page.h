@@ -12,7 +12,6 @@
 
 #include <utility>
 #include <vector>
-
 #include "storage/page/b_plus_tree_page.h"
 
 namespace bustub {
@@ -49,6 +48,40 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   auto GetNextPageId() const -> page_id_t;
   void SetNextPageId(page_id_t next_page_id);
   auto KeyAt(int index) const -> KeyType;
+  auto GetItem(int index) const -> const MappingType &;
+  /**
+   * @brief  Look up the value associated with the given key
+   * @param key  the key to look up
+   * @param comparator    key comparator
+   * @return  the value associated with the given key
+   */
+  auto LookUp(const KeyType &key, const KeyComparator &comparator) const -> std::optional<ValueType>;
+  // move half of the key-value pairs to the recipient
+  void MoveHalfTo(BPlusTreeLeafPage *recipient);
+  void Split(BPlusTreeLeafPage *new_node);
+  void MergeFromRight(BPlusTreeLeafPage *right_sibling_node);
+
+  /**
+   * @brief  Insert a key-value pair into the leaf page
+   * @param key   key to insert
+   * @param value   value to insert
+   * @param comparator  key comparator
+   * @return  return true if insert successfully. If the key already exists, return false
+   */
+  auto Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator) -> bool;
+  /**
+   * @brief  Remove a key-value pair from the leaf page
+   * @param key  key to remove
+   * @param comparator  key comparator
+   * @return  return true if remove successfully. If the key doesn't exist, return false
+   */
+  auto Remove(const KeyType &key, const KeyComparator &comparator) -> bool;
+
+  void BorrowFromRight(BPlusTreeLeafPage *right_sibling_node);
+
+  void BorrowFromLeft(BPlusTreeLeafPage *left_sibling_node);
+  // return the index of the key, the array_ must be sorted before calling
+  auto KeyIndex(const KeyType &key, const KeyComparator &comparator) const -> std::optional<int>;
 
  private:
   page_id_t next_page_id_;

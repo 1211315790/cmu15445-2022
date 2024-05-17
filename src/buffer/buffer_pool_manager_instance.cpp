@@ -69,16 +69,19 @@ auto BufferPoolManagerInstance::NewPgImp(page_id_t *page_id) -> Page * {
     return nullptr;
   }
   Page *new_page = &pages_[frame_id];
-  // Allocate a new page ID and create a new page in the buffer pool.
-  *page_id = AllocatePage();
+
   // Initialize the new page metadata.
-  new_page->page_id_ = *page_id;
+  new_page->page_id_ = AllocatePage();
   new_page->pin_count_ = 1;
   new_page->ResetMemory();
   // Insert the new page into the page table and mark it as evictable.
-  page_table_->Insert(*page_id, frame_id);
+  page_table_->Insert(new_page->page_id_, frame_id);
   replacer_->RecordAccess(frame_id);
   replacer_->SetEvictable(frame_id, false);
+  // Allocate a new page ID and create a new page in the buffer pool.
+  if (page_id != nullptr) {
+    *page_id = new_page->page_id_;
+  }
   return new_page;
 }
 

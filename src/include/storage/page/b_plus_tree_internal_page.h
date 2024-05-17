@@ -40,10 +40,25 @@ class BPlusTreeInternalPage : public BPlusTreePage {
 
   auto KeyAt(int index) const -> KeyType;
   void SetKeyAt(int index, const KeyType &key);
+  void SetValueAt(int index, const ValueType &value);
   auto ValueAt(int index) const -> ValueType;
+  void Remove(int index);
+  auto Remove(const KeyType &key, const KeyComparator &comparator) -> bool;
+  auto FindKeyInPageId(const KeyType &key, const KeyComparator &comparator) const -> std::optional<ValueType>;
+  auto Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator) -> bool;
+  void MoveHalfTo(BPlusTreeInternalPage *recipient, BufferPoolManager *buffer_pool_manager);
+  void Split(BPlusTreeInternalPage *node, BufferPoolManager *buffer_pool_manager);
+  auto ValueIndex(const ValueType &value) const -> int;
+  void MergeFromRight(BPlusTreeInternalPage *right_sibling_node, BufferPoolManager *buffer_pool_manager);
+  void BorrowFromRight(BPlusTreeInternalPage *right_sibling, const KeyType &middle_key,
+                       BufferPoolManager *buffer_pool_manager);
+  void BorrowFromLeft(BPlusTreeInternalPage *left_sibling, const KeyType &middle_key,
+                      BufferPoolManager *buffer_pool_manager);
 
  private:
+  auto KeyIndex(const KeyType &key, const KeyComparator &comparator) const -> std::optional<int>;
+
   // Flexible array member for page data.
-  MappingType array_[1];
+  MappingType array_[1];  // index->page_id
 };
 }  // namespace bustub

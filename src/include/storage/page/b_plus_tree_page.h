@@ -64,10 +64,10 @@ class BPlusTreePage {
 
  private:
   // member variable, attributes that both internal and leaf page share
-  IndexPageType page_type_ __attribute__((__unused__));
+  IndexPageType page_type_ __attribute__((__unused__));  // leaf or internal. 4 Byte
   lsn_t lsn_ __attribute__((__unused__));
-  int size_ __attribute__((__unused__));
-  int max_size_ __attribute__((__unused__));
+  int size_ __attribute__((__unused__));      // 关键字个数=size_-1
+  int max_size_ __attribute__((__unused__));  // M
   page_id_t parent_page_id_ __attribute__((__unused__));
   page_id_t page_id_ __attribute__((__unused__));
 };
