@@ -33,10 +33,10 @@ namespace bustub {
  * (3) The structure should shrink and grow dynamically
  * (4) Implement index iterator for range scan
  */
+enum class OperationType { SEARCH, INSERT, DELETE };
+
 INDEX_TEMPLATE_ARGUMENTS
 class BPlusTree {
-  enum class OperationType { SEARCH, INSERT, DELETE };
-
   using InternalPage = BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator>;
   using LeafPage = BPlusTreeLeafPage<KeyType, ValueType, KeyComparator>;
 
@@ -84,15 +84,19 @@ class BPlusTree {
 
  private:
   // Returns the page pointer of leaf page that contains the key.
-  auto FindLeaf(const KeyType &key, OperationType operation_type, bool leaf_most = false, bool right_most = false)
-      -> Page *;
+  auto FindLeaf(const KeyType &key, OperationType operation_type, Transaction *transaction = nullptr,
+                bool leaf_most = false, bool right_most = false) -> Page *;
+  // return true if node is safe, otherwise return false
+  auto IsSafe(OperationType operation_type, BPlusTreePage *node) -> bool;
+  // release latch from queue
+  void ReleaseLatchFromQueue(Transaction *transaction);
 
   // Split a node and return the new node after splitting.
   template <typename N>
   auto Split(N *node) -> N *;
 
   template <typename N>
-  void RemoveEntry(N *node, const KeyType &key, Transaction *transaction = nullptr);
+  auto RemoveEntry(N *node, const KeyType &key, Transaction *transaction = nullptr) -> bool;
 
   template <typename N>
   void Coalesce(N *node, N *sibling_node, InternalPage *parent_node, Transaction *transaction = nullptr);
@@ -112,7 +116,6 @@ class BPlusTree {
   void ToGraph(BPlusTreePage *page, BufferPoolManager *bpm, std::ofstream &out) const;
 
   void ToString(BPlusTreePage *page, BufferPoolManager *bpm) const;
-
   // member variable
   std::string index_name_;
   page_id_t root_page_id_;
@@ -120,7 +123,7 @@ class BPlusTree {
   KeyComparator comparator_;
   int leaf_max_size_;
   int internal_max_size_;
-  ReaderWriterLatch latch_;
+  ReaderWriterLatch root_latch_;
 };
 
 }  // namespace bustub

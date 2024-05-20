@@ -12,14 +12,15 @@ namespace bustub {
  * set your own input parameters
  */
 INDEX_TEMPLATE_ARGUMENTS
-INDEXITERATOR_TYPE::IndexIterator(BufferPoolManager *buffer_pool_manager, LeafPage *leaf_page, int index)
-    : buffer_pool_manager_(buffer_pool_manager), leaf_page_(leaf_page), index_(index) {
-  BUSTUB_ASSERT(leaf_page_ != nullptr, "leaf_page_ is null");
+INDEXITERATOR_TYPE::IndexIterator(BufferPoolManager *buffer_pool_manager, Page *page, int index)
+    : buffer_pool_manager_(buffer_pool_manager), page_(page), index_(index) {
+  leaf_page_ = page == nullptr ? nullptr : reinterpret_cast<LeafPage *>(page->GetData());
 }
 
 INDEX_TEMPLATE_ARGUMENTS INDEXITERATOR_TYPE::~IndexIterator() {
-  if (leaf_page_ != nullptr) {
-    BUSTUB_ASSERT(buffer_pool_manager_->UnpinPage(leaf_page_->GetPageId(), false), "Unpin failed");
+  if (page_ != nullptr) {
+    page_->RUnlatch();
+    BUSTUB_ASSERT(buffer_pool_manager_->UnpinPage(page_->GetPageId(), false), "Unpin failed");
   }
 }  // NOLINT
 
@@ -45,16 +46,30 @@ auto INDEXITERATOR_TYPE::operator++() -> INDEXITERATOR_TYPE & {
     return *this;
   }
   // 有下一页
-  BUSTUB_ASSERT(buffer_pool_manager_->UnpinPage(leaf_page_->GetPageId(), false), "Unpin failed");
-  Page *page = buffer_pool_manager_->FetchPage(next_page_id);
-  BUSTUB_ASSERT(page != nullptr, "FetchPage failed");
-  leaf_page_ = reinterpret_cast<LeafPage *>(page->GetData());
+  Page *next_page = buffer_pool_manager_->FetchPage(next_page_id);
+  BUSTUB_ASSERT(next_page != nullptr, "FetchPage failed");
+  next_page->RLatch();
+  page_->RUnlatch();
+  BUSTUB_ASSERT(buffer_pool_manager_->UnpinPage(page_->GetPageId(), false), "Unpin failed");
+
+  page_ = next_page;
+  leaf_page_ = reinterpret_cast<LeafPage *>(page_->GetData());
   index_ = 0;
   return *this;
 }
 INDEX_TEMPLATE_ARGUMENTS
 auto INDEXITERATOR_TYPE::operator==(const IndexIterator &itr) const -> bool {
-  return leaf_page_->GetPageId() == itr.leaf_page_->GetPageId() && index_ == itr.index_;
+  if (page_ != nullptr && itr.page_ != nullptr) {
+    return leaf_page_->GetPageId() == itr.leaf_page_->GetPageId() && index_ == itr.index_;
+  }
+  if (page_ == nullptr) {
+    return itr.page_ == nullptr;
+  }
+  if (itr.page_ == nullptr) {
+    return false;
+  }
+  // not go here
+  return false;
 }
 INDEX_TEMPLATE_ARGUMENTS
 auto INDEXITERATOR_TYPE::operator!=(const IndexIterator &itr) const -> bool { return !(*this == itr); }

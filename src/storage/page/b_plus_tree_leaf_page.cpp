@@ -135,8 +135,8 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::BorrowFromRight(BPlusTreeLeafPage *right_siblin
   BUSTUB_ASSERT(right_sibling_node->GetSize() > 0, "no element to move");
   MappingType first = right_sibling_node->array_[0];
   // move the elements
-  std::move_backward(right_sibling_node->array_ + 1, right_sibling_node->array_ + right_sibling_node->GetSize(),
-                     right_sibling_node->array_ + right_sibling_node->GetSize() - 1);
+  std::move(right_sibling_node->array_ + 1, right_sibling_node->array_ + right_sibling_node->GetSize(),
+            right_sibling_node->array_);
   array_[GetSize()] = first;
   // update the size
   right_sibling_node->IncreaseSize(-1);
@@ -153,17 +153,6 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::BorrowFromLeft(BPlusTreeLeafPage *left_sibling_
   // update the size
   left_sibling_node->IncreaseSize(-1);
   IncreaseSize(1);
-}
-
-INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient) {
-  // calculate the number of elements to move
-  int move_num = GetMaxSize() - GetMinSize();
-  // move the elements
-  std::move_backward(array_ + GetMinSize(), array_ + GetMaxSize(), recipient->array_ + recipient->GetSize() + move_num);
-  // update the size
-  IncreaseSize(-move_num);
-  recipient->IncreaseSize(move_num);
 }
 
 INDEX_TEMPLATE_ARGUMENTS

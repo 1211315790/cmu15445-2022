@@ -56,8 +56,6 @@ class BPlusTreeLeafPage : public BPlusTreePage {
    * @return  the value associated with the given key
    */
   auto LookUp(const KeyType &key, const KeyComparator &comparator) const -> std::optional<ValueType>;
-  // move half of the key-value pairs to the recipient
-  void MoveHalfTo(BPlusTreeLeafPage *recipient);
   void Split(BPlusTreeLeafPage *new_node);
   void MergeFromRight(BPlusTreeLeafPage *right_sibling_node);
 
