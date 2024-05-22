@@ -58,13 +58,13 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   auto LookUp(const KeyType &key, const KeyComparator &comparator) const -> std::optional<ValueType>;
   void Split(BPlusTreeLeafPage *new_node);
   void MergeFromRight(BPlusTreeLeafPage *right_sibling_node);
-
   /**
    * @brief  Insert a key-value pair into the leaf page
    * @param key   key to insert
    * @param value   value to insert
    * @param comparator  key comparator
-   * @return  return true if insert successfully. If the key already exists, return false
+   * @return  return true if insert successfully. If the key already
+   * exists, return false
    */
   auto Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator) -> bool;
   /**

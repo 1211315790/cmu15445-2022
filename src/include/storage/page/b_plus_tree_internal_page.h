@@ -43,17 +43,18 @@ class BPlusTreeInternalPage : public BPlusTreePage {
   void SetValueAt(int index, const ValueType &value);
   auto ValueAt(int index) const -> ValueType;
   void Remove(int index);
+  void CopyNFrom(MappingType *items, int size, BufferPoolManager *buffer_pool_manager);
   auto Remove(const KeyType &key, const KeyComparator &comparator) -> bool;
   auto FindKeyInPageId(const KeyType &key, const KeyComparator &comparator) const -> std::optional<ValueType>;
   auto Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator) -> bool;
-  void MoveHalfTo(BPlusTreeInternalPage *recipient, BufferPoolManager *buffer_pool_manager);
-  void Split(BPlusTreeInternalPage *node, BufferPoolManager *buffer_pool_manager);
+  void Split(BPlusTreeInternalPage *new_node, BufferPoolManager *buffer_pool_manager);
   auto ValueIndex(const ValueType &value) const -> int;
   void MergeFromRight(BPlusTreeInternalPage *right_sibling_node, BufferPoolManager *buffer_pool_manager);
   void BorrowFromRight(BPlusTreeInternalPage *right_sibling, const KeyType &middle_key,
                        BufferPoolManager *buffer_pool_manager);
   void BorrowFromLeft(BPlusTreeInternalPage *left_sibling, const KeyType &middle_key,
                       BufferPoolManager *buffer_pool_manager);
+  auto InsertNodeAfter(const ValueType &old_value, const KeyType &new_key, const ValueType &new_value) -> int;
 
  private:
   auto KeyIndex(const KeyType &key, const KeyComparator &comparator) const -> std::optional<int>;

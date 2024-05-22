@@ -125,41 +125,19 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::Insert(const KeyType &key, const ValueType 
   return true;
 }
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveHalfTo(BPlusTreeInternalPage *recipient,
-                                                BufferPoolManager *buffer_pool_manager) {
-  // move the last half key-value pairs to the recipient
-  int move_num = GetSize() - GetMinSize();
-  // std::copy(array_ + GetMinSize(), array_ + GetSize(), recipient->array_ + recipient->GetSize());
-  std::move_backward(array_ + GetMinSize(), array_ + GetSize(), recipient->array_ + recipient->GetSize() + move_num);
-  SetSize(GetSize() - move_num);
-  int recipient_origin_size = recipient->GetSize();
-  recipient->IncreaseSize(move_num);
-  if (buffer_pool_manager != nullptr) {
-    for (int i = 0; i < move_num; i++) {
-      Page *page = buffer_pool_manager->FetchPage(recipient->ValueAt(i + recipient_origin_size));
-      BUSTUB_ASSERT(page != nullptr, "page is nullptr");
-      auto node = reinterpret_cast<BPlusTreePage *>(page->GetData());
-      node->SetParentPageId(recipient->GetPageId());
-      BUSTUB_ASSERT(buffer_pool_manager->UnpinPage(page->GetPageId(), true), "unpin page failed");
-    }
-  }
-}
-INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Split(BPlusTreeInternalPage *new_node, BufferPoolManager *buffer_pool_manager) {
-  // move the last half key-value pairs to the recipient
+  BUSTUB_ASSERT(buffer_pool_manager != nullptr, "buffer_pool_manager is nullptr");
+  std::copy(array_ + GetMinSize(), array_ + GetSize(), new_node->array_ + new_node->GetSize());
   int move_num = GetSize() - GetMinSize();
-  std::move_backward(array_ + GetMinSize(), array_ + GetSize(), new_node->array_ + new_node->GetSize() + move_num);
-  SetSize(GetSize() - move_num);
-  int new_node_origin_size = new_node->GetSize();
+  SetSize(GetMinSize());
+  int newnode_original_size = new_node->GetSize();
   new_node->IncreaseSize(move_num);
-  if (buffer_pool_manager != nullptr) {
-    for (int i = 0; i < move_num; i++) {
-      Page *page = buffer_pool_manager->FetchPage(new_node->ValueAt(i + new_node_origin_size));
-      BUSTUB_ASSERT(page != nullptr, "page is nullptr");
-      auto node = reinterpret_cast<BPlusTreePage *>(page->GetData());
-      node->SetParentPageId(new_node->GetPageId());
-      BUSTUB_ASSERT(buffer_pool_manager->UnpinPage(page->GetPageId(), true), "unpin page failed");
-    }
+  for (int i = 0; i < move_num; i++) {
+    auto page = buffer_pool_manager->FetchPage(new_node->ValueAt(i + newnode_original_size));
+    BUSTUB_ASSERT(page != nullptr, "page is nullptr");
+    auto node = reinterpret_cast<BPlusTreePage *>(page->GetData());
+    node->SetParentPageId(new_node->GetPageId());
+    buffer_pool_manager->UnpinPage(page->GetPageId(), true);
   }
 }
 
@@ -226,6 +204,19 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyCompa
     return std::nullopt;
   }
   return index;
+}
+INDEX_TEMPLATE_ARGUMENTS
+auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::InsertNodeAfter(const ValueType &old_value, const KeyType &new_key,
+                                                     const ValueType &new_value) -> int {
+  auto new_value_idx = ValueIndex(old_value) + 1;
+  std::move_backward(array_ + new_value_idx, array_ + GetSize(), array_ + GetSize() + 1);
+
+  array_[new_value_idx].first = new_key;
+  array_[new_value_idx].second = new_value;
+
+  IncreaseSize(1);
+
+  return GetSize();
 }
 
 // valuetype for internalNode should be page id_t

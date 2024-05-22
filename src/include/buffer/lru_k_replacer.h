@@ -134,24 +134,16 @@ class LRUKReplacer {
    * @return size_t
    */
   auto Size() -> size_t;
-  class FrameEntry {
-   public:
-    FrameEntry(std::list<frame_id_t>::iterator iter, size_t timestamp) : iter_(iter) {
-      timestamp_list_.emplace_back(timestamp);
-    }
-    FrameEntry() = default;
-
-   public:
-    size_t hit_count_{0};               // 该页框被访问的次数，与timestamp_list_的长度一致
-    bool evictable_{true};              // 该页框是否可以被驱逐
-    std::list<size_t> timestamp_list_;  // 该页框的历史访问时间戳序列，长度最大值为k_
-    std::list<frame_id_t>::iterator iter_;  // 该页框对应的frame_id在历史队列或缓存队列中的迭代器，用于提高查找效率
+  struct FrameEntry {
+    size_t hit_count_{0};   // 该页框被访问的次数，与timestamp_list_的长度一致
+    bool evictable_{true};  // 该页框是否可以被驱逐
+    std::list<frame_id_t>::iterator pos_;  // 该页框对应的frame_id在历史队列或缓存队列中的迭代器，用于提高查找效率
   };
 
  private:
   // TODO(student): implement me! You can replace these member variables as you like.
   // Remove maybe_unused if you start using them.
-  size_t current_timestamp_{0};
+  [[maybe_unused]] size_t current_timestamp_{0};
   size_t curr_size_{0};
   size_t replacer_size_;
   size_t k_;

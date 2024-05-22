@@ -90,9 +90,7 @@ INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator)
     -> bool {
   // if page is full, return false
-  if (GetSize() == GetMaxSize()) {
-    return false;
-  }
+  BUSTUB_ASSERT(GetSize() < GetMaxSize(), "page is full");
   // find the first key that is greater than or equal to the key
   auto target = std::lower_bound(array_, array_ + GetSize(), key, [&](const MappingType &pair, const KeyType &key) {
     return comparator(pair.first, key) < 0;
@@ -154,15 +152,14 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::BorrowFromLeft(BPlusTreeLeafPage *left_sibling_
   left_sibling_node->IncreaseSize(-1);
   IncreaseSize(1);
 }
-
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::Split(BPlusTreeLeafPage *new_node) {
   // calculate the number of elements to move
   int move_num = GetMaxSize() - GetMinSize();
   // move the elements
-  std::move_backward(array_ + GetMinSize(), array_ + GetMaxSize(), new_node->array_ + new_node->GetSize() + move_num);
+  std::copy(array_ + GetMinSize(), array_ + GetMaxSize(), new_node->array_ + new_node->GetSize());
   // update the size
-  IncreaseSize(-move_num);
+  SetSize(GetMinSize());
   new_node->IncreaseSize(move_num);
 }
 INDEX_TEMPLATE_ARGUMENTS

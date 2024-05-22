@@ -36,6 +36,7 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
   root_latch_.RLock();
   // find the leaf page that contains the key
   Page *page = FindLeaf(key, OperationType::SEARCH, transaction);
+  BUSTUB_ASSERT(page != nullptr, "FindLeaf failed");
   auto leaf_page = reinterpret_cast<LeafPage *>(page->GetData());
   std::optional<ValueType> ret = leaf_page->LookUp(key, comparator_);
   page->RUnlatch();
@@ -146,15 +147,18 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
   transaction->AddIntoPageSet(nullptr);  // nullptr means root latch
   if (IsEmpty()) {
     Page *page = buffer_pool_manager_->NewPage(&root_page_id_);
+    BUSTUB_ASSERT(page != nullptr, "Cannot allocate new page");
     auto root_page = reinterpret_cast<LeafPage *>(page->GetData());
     root_page->Init(page->GetPageId(), INVALID_PAGE_ID, leaf_max_size_);
-    BUSTUB_ASSERT(root_page->Insert(key, value, comparator_) == true, "Insert failed");
-    BUSTUB_ASSERT(buffer_pool_manager_->UnpinPage(page->GetPageId(), true), "Unpin failed");
+    BUSTUB_ASSERT(root_page->Insert(key, value, comparator_), "Insert failed");
+    buffer_pool_manager_->UnpinPage(page->GetPageId(), true);
+    UpdateRootPageId(1);
     ReleaseLatchFromQueue(transaction);
     return true;
   }
   Page *leaf_page = FindLeaf(key, OperationType::INSERT, transaction);
   auto leaf_node = reinterpret_cast<LeafPage *>(leaf_page->GetData());
+
   // duplicate key
   if (bool ret = leaf_node->Insert(key, value, comparator_); !ret) {
     ReleaseLatchFromQueue(transaction);
@@ -162,13 +166,15 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
     BUSTUB_ASSERT(buffer_pool_manager_->UnpinPage(leaf_page->GetPageId(), false), "Unpin failed");
     return false;
   }
+
   // leaf is not full
   if (leaf_node->GetSize() < leaf_max_size_) {
     ReleaseLatchFromQueue(transaction);
     leaf_page->WUnlatch();
-    BUSTUB_ASSERT(buffer_pool_manager_->UnpinPage(leaf_page->GetPageId(), true), "Unpin failed");
+    buffer_pool_manager_->UnpinPage(leaf_page->GetPageId(), true);
     return true;
   }
+
   // leaf is full, need to split
   auto sibling_leaf_node = Split(leaf_node);
 
@@ -177,10 +183,9 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
 
   auto smallest_key = sibling_leaf_node->KeyAt(0);
   InsertIntoParent(leaf_node, smallest_key, sibling_leaf_node, transaction);
-  BUSTUB_ASSERT(buffer_pool_manager_->UnpinPage(sibling_leaf_node->GetPageId(), true), "Unpin failed");
   leaf_page->WUnlatch();
-  BUSTUB_ASSERT(buffer_pool_manager_->UnpinPage(leaf_page->GetPageId(), true), "Unpin failed");
-
+  buffer_pool_manager_->UnpinPage(leaf_page->GetPageId(), true);
+  buffer_pool_manager_->UnpinPage(sibling_leaf_node->GetPageId(), true);
   return true;
 }
 INDEX_TEMPLATE_ARGUMENTS
@@ -196,7 +201,8 @@ void BPLUSTREE_TYPE::ReleaseLatchFromQueue(Transaction *transaction) {
     }
   }
 }
-INDEX_TEMPLATE_ARGUMENTS template <typename N>
+INDEX_TEMPLATE_ARGUMENTS
+template <typename N>
 auto BPLUSTREE_TYPE::Split(N *node) -> N * {
   page_id_t page_id;
   Page *page = buffer_pool_manager_->NewPage(&page_id);
@@ -250,9 +256,9 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
   auto parent_node = reinterpret_cast<InternalPage *>(parent_page->GetData());
 
   if (parent_node->GetSize() < internal_max_size_) {
-    BUSTUB_ASSERT(parent_node->Insert(key, new_node->GetPageId(), comparator_), "Insert failed");
+    parent_node->Insert(key, new_node->GetPageId(), comparator_);
     ReleaseLatchFromQueue(transaction);
-    BUSTUB_ASSERT(buffer_pool_manager_->UnpinPage(parent_page->GetPageId(), true), "Unpin failed");
+    buffer_pool_manager_->UnpinPage(parent_page->GetPageId(), true);
     return;
   }
   /*split parent_node*/
@@ -272,8 +278,8 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
 
   InsertIntoParent(parent_node, new_key, parent_new_sibling_node, transaction);
 
-  BUSTUB_ASSERT(buffer_pool_manager_->UnpinPage(parent_page->GetPageId(), true), "Unpin failed");
-  BUSTUB_ASSERT(buffer_pool_manager_->UnpinPage(parent_new_sibling_node->GetPageId(), true), "Unpin failed");
+  buffer_pool_manager_->UnpinPage(parent_page->GetPageId(), true);
+  buffer_pool_manager_->UnpinPage(parent_new_sibling_node->GetPageId(), true);
 }
 /*****************************************************************************
  * REMOVE

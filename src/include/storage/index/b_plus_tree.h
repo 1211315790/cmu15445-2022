@@ -83,6 +83,7 @@ class BPlusTree {
   void RemoveFromFile(const std::string &file_name, Transaction *transaction = nullptr);
 
  private:
+  auto InsertIntoLeaf(const KeyType &key, const ValueType &value, Transaction *transaction) -> bool;
   // Returns the page pointer of leaf page that contains the key.
   auto FindLeaf(const KeyType &key, OperationType operation_type, Transaction *transaction = nullptr,
                 bool leaf_most = false, bool right_most = false) -> Page *;

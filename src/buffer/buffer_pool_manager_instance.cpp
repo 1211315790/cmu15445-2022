@@ -57,6 +57,7 @@ auto BufferPoolManagerInstance::GetFrame(frame_id_t *frame_id) -> bool {
     page_table_->Remove(evicted_page->GetPageId());
     evicted_page->page_id_ = INVALID_PAGE_ID;
     evicted_page->pin_count_ = 0;
+    evicted_page->is_dirty_ = false;
     evicted_page->ResetMemory();
     return true;
   }
