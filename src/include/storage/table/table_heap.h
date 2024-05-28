@@ -55,7 +55,7 @@ class TableHeap {
    * @param tuple tuple to insert
    * @param[out] rid the rid of the inserted tuple
    * @param txn the transaction performing the insert
-   * @return true iff the insert is successful
+   * @return true if the insert is successful
    */
   auto InsertTuple(const Tuple &tuple, RID *rid, Transaction *txn) -> bool;
 
@@ -72,7 +72,7 @@ class TableHeap {
    * @param tuple new tuple
    * @param rid rid of the old tuple
    * @param txn transaction performing the update
-   * @return true is update is successful.
+   * @return true if update is successful.
    */
   auto UpdateTuple(const Tuple &tuple, const RID &rid, Transaction *txn) -> bool;
 
