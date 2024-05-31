@@ -11,10 +11,10 @@
 //===----------------------------------------------------------------------===//
 
 #pragma once
-
 #include <memory>
+#include <set>
 #include <utility>
-
+#include <vector>
 #include "execution/executor_context.h"
 #include "execution/executors/abstract_executor.h"
 #include "execution/plans/nested_loop_join_plan.h"
@@ -51,10 +51,18 @@ class NestedLoopJoinExecutor : public AbstractExecutor {
 
   /** @return The output schema for the insert */
   auto GetOutputSchema() const -> const Schema & override { return plan_->OutputSchema(); };
+  auto Matched(Tuple *outer_tuple, Tuple *inner_tuple) const -> bool;
 
  private:
   /** The NestedLoopJoin plan node to be executed. */
   const NestedLoopJoinPlanNode *plan_;
+  std::vector<Tuple> inner_tuples_;
+  Tuple out_tuple_;
+  int32_t inner_tuple_idx_{-1};
+  std::unique_ptr<AbstractExecutor> outer_executor_;
+  std::unique_ptr<AbstractExecutor> inner_executor_;
+  std::set<int32_t> inner_matched_idx_;
+  int32_t inner_tuple_match_idx_{0};
 };
 
 }  // namespace bustub

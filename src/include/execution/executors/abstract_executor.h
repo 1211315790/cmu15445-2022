@@ -21,6 +21,7 @@ namespace bustub {
  * This is the base class from which all executors in the BustTub execution
  * engine inherit, and defines the minimal interface that all executors support.
  */
+
 class AbstractExecutor {
  public:
   /**

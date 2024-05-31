@@ -13,6 +13,7 @@
 #pragma once
 
 #include <memory>
+#include <stack>
 #include <vector>
 
 #include "execution/executor_context.h"
@@ -44,6 +45,7 @@ class TopNExecutor : public AbstractExecutor {
    * @param[out] rid The next tuple RID produced by the topn
    * @return `true` if a tuple was produced, `false` if there are no more tuples
    */
+
   auto Next(Tuple *tuple, RID *rid) -> bool override;
 
   /** @return The output schema for the topn */
@@ -52,5 +54,7 @@ class TopNExecutor : public AbstractExecutor {
  private:
   /** The topn plan node to be executed */
   const TopNPlanNode *plan_;
+  std::unique_ptr<AbstractExecutor> child_executor_;
+  std::stack<Tuple> top_n_;
 };
 }  // namespace bustub

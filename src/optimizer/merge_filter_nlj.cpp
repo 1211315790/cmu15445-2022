@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstdio>
 #include <memory>
 #include "catalog/column.h"
 #include "catalog/schema.h"
@@ -10,6 +11,7 @@
 #include "execution/plans/filter_plan.h"
 #include "execution/plans/nested_loop_join_plan.h"
 #include "execution/plans/projection_plan.h"
+#include "fmt/core.h"
 #include "optimizer/optimizer.h"
 #include "type/type_id.h"
 
