@@ -71,7 +71,7 @@ auto NestedLoopJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
         return true;
       }
     }
-    if (inner_tuple_idx_ == -1 && plan_->GetJoinType() == JoinType::LEFT) {
+    if (inner_tuple_idx_ == -1 && (plan_->GetJoinType() == JoinType::LEFT || plan_->GetJoinType() == JoinType::RIGHT)) {
       for (uint32_t idx = 0; idx < outer_executor_->GetOutputSchema().GetColumnCount(); idx++) {
         vals.push_back(out_tuple_.GetValue(&outer_executor_->GetOutputSchema(), idx));
       }

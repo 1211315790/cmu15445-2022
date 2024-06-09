@@ -134,24 +134,30 @@ class LRUKReplacer {
    * @return size_t
    */
   auto Size() -> size_t;
-  struct FrameEntry {
-    size_t hit_count_{0};   // 该页框被访问的次数，与timestamp_list_的长度一致
-    bool evictable_{true};  // 该页框是否可以被驱逐
-    std::list<frame_id_t>::iterator pos_;  // 该页框对应的frame_id在历史队列或缓存队列中的迭代器，用于提高查找效率
+  class FrameEntry {
+   public:
+    FrameEntry() = default;
+    explicit FrameEntry(frame_id_t frame_id) : frame_id_(frame_id) {}
+
+   public:
+    frame_id_t frame_id_;                 // 页框号
+    bool evictable_{true};                // 该页框是否可以被驱逐
+    std::vector<size_t> timestamp_list_;  // 该页框的历史访问时间戳序列，长度最大值为k_
   };
 
  private:
   // TODO(student): implement me! You can replace these member variables as you like.
   // Remove maybe_unused if you start using them.
-  [[maybe_unused]] size_t current_timestamp_{0};
+  size_t current_timestamp_{0};
   size_t curr_size_{0};
   size_t replacer_size_;
   size_t k_;
   std::mutex latch_;
 
-  std::list<frame_id_t> history_list_;                  // 历史队列，使用FIFO进行淘汰处理
-  std::list<frame_id_t> cache_list_;                    // 缓存队列，根据k-distance进行淘汰处理
-  std::unordered_map<frame_id_t, FrameEntry> entries_;  // 映射页框号和其对应的页框实体
+  std::list<FrameEntry> history_list_;  // 历史队列，使用FIFO进行淘汰处理
+  std::list<FrameEntry> cache_list_;    // 缓存队列，根据k-distance进行淘汰处理
+  std::unordered_map<frame_id_t, std::list<FrameEntry>::iterator> histroy_entries_;  // 映射页框号和其对应的页框实体
+  std::unordered_map<frame_id_t, std::list<FrameEntry>::iterator> cache_entries_;  // 映射页框号和其对应的页框实体
 };
 
 }  // namespace bustub

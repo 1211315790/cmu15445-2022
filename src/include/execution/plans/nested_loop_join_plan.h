@@ -59,7 +59,12 @@ class NestedLoopJoinPlanNode : public AbstractPlanNode {
 
   static auto InferJoinSchema(const AbstractPlanNode &left, const AbstractPlanNode &right) -> Schema;
 
-  BUSTUB_PLAN_NODE_CLONE_WITH_CHILDREN(NestedLoopJoinPlanNode);
+  auto CloneWithChildren(std ::vector<AbstractPlanNodeRef> children) const
+      -> std ::unique_ptr<AbstractPlanNode> override {
+    auto plan_node = NestedLoopJoinPlanNode(*this);
+    plan_node.children_ = children;
+    return std ::make_unique<NestedLoopJoinPlanNode>(std ::move(plan_node));
+  };
 
   /** The join predicate */
   AbstractExpressionRef predicate_;

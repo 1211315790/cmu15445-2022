@@ -53,11 +53,11 @@ auto BufferPoolManagerInstance::GetFrame(frame_id_t *frame_id) -> bool {
     Page *evicted_page = &pages_[*frame_id];
     if (evicted_page->IsDirty()) {
       disk_manager_->WritePage(evicted_page->GetPageId(), evicted_page->GetData());
+      evicted_page->is_dirty_ = false;
     }
     page_table_->Remove(evicted_page->GetPageId());
     evicted_page->page_id_ = INVALID_PAGE_ID;
     evicted_page->pin_count_ = 0;
-    evicted_page->is_dirty_ = false;
     evicted_page->ResetMemory();
     return true;
   }
@@ -139,6 +139,9 @@ auto BufferPoolManagerInstance::UnpinPgImp(page_id_t page_id, bool is_dirty) -> 
 auto BufferPoolManagerInstance::FlushPgImp(page_id_t page_id) -> bool {
   std::scoped_lock<std::mutex> lck(latch_);
   frame_id_t frame_id;
+  if (page_id == INVALID_PAGE_ID) {
+    return false;
+  }
   if (!page_table_->Find(page_id, frame_id)) {
     return false;
   }
@@ -148,7 +151,6 @@ auto BufferPoolManagerInstance::FlushPgImp(page_id_t page_id) -> bool {
 }
 
 void BufferPoolManagerInstance::FlushAllPgsImp() {
-  std::scoped_lock<std::mutex> lck(latch_);
   for (size_t i = 0; i < pool_size_; ++i) {
     FlushPgImp(pages_[i].GetPageId());
   }

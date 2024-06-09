@@ -312,6 +312,12 @@ auto DecimalType::CastAs(const Value &val, const TypeId type_id) const -> Value 
       }
       return {TypeId::VARCHAR, val.ToString()};
     }
+    case TypeId::BOOLEAN: {
+      if (val.IsNull()) {
+        return {TypeId::BOOLEAN, 0};
+      }
+      return {type_id, static_cast<int64_t>(val.GetAs<double>() != 0)};
+    }
     default:
       break;
   }

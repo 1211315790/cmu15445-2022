@@ -6,6 +6,7 @@
 #include "common/exception.h"
 #include "common/macros.h"
 #include "execution/expressions/column_value_expression.h"
+#include "execution/expressions/comparison_expression.h"
 #include "execution/expressions/constant_value_expression.h"
 #include "execution/plans/abstract_plan.h"
 #include "execution/plans/filter_plan.h"
@@ -40,7 +41,21 @@ auto Optimizer::RewriteExpressionForJoin(const AbstractExpressionRef &expr, size
 
 auto Optimizer::IsPredicateTrue(const AbstractExpression &expr) -> bool {
   if (const auto *const_expr = dynamic_cast<const ConstantValueExpression *>(&expr); const_expr != nullptr) {
-    return const_expr->val_.CastAs(TypeId::BOOLEAN).GetAs<bool>();
+    return const_expr->val_.CompareEquals(ValueFactory::GetBooleanValue(true)) == CmpBool::CmpTrue;
+  }
+  if (const auto *compare_expr = dynamic_cast<const ComparisonExpression *>(&expr); compare_expr != nullptr) {
+    if (const auto *left_expr = dynamic_cast<const ConstantValueExpression *>(compare_expr->children_[0].get());
+        left_expr != nullptr) {
+      if (const auto *right_expr = dynamic_cast<const ConstantValueExpression *>(compare_expr->children_[1].get());
+          right_expr != nullptr) {
+        std::vector<Column> dummy_cols;
+        Schema dummy_schema{dummy_cols};
+        auto res = compare_expr->Evaluate(nullptr, dummy_schema);
+        if (res.CompareEquals(ValueFactory::GetBooleanValue(true)) == CmpBool::CmpTrue) {
+          return true;
+        }
+      }
+    }
   }
   return false;
 }

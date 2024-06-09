@@ -90,12 +90,13 @@ void ExtendibleHashTable<K, V>::Insert(const K &key, const V &value) {
   //  1. If the local depth of the bucket is equal to the global depth,
   //        increment the global depth and double the size of the directory.
   while (!bucket_ptr->Insert(key, value)) {
-    if (bucket_ptr->GetDepth() == global_depth_) {
+    int local_depth = bucket_ptr->GetDepth();
+    if (local_depth == global_depth_) {
       // double the size of the directory
       global_depth_ += 1;
-      dir_.resize(1 << global_depth_);
+      dir_.resize(dir_.size() * 2);
       // copy the first half of the directory to the second half
-      std::copy(dir_.begin(), dir_.begin() + (1 << (global_depth_ - 1)), dir_.begin() + (1 << (global_depth_ - 1)));
+      std::copy(dir_.begin(), dir_.begin() + dir_.size() / 2, dir_.begin() + dir_.size() / 2);
     }
     bucket_ptr->IncrementDepth();
     RedistributeBucket(bucket_ptr);
@@ -170,7 +171,7 @@ auto ExtendibleHashTable<K, V>::Bucket::Insert(const K &key, const V &value) -> 
     return true;
   }
   // full
-  if (list_.size() >= size_) {
+  if (IsFull()) {
     return false;
   }
   list_.emplace_back(key, value);

@@ -68,7 +68,12 @@ class NestedIndexJoinPlanNode : public AbstractPlanNode {
   /** @return Schema with needed columns in from the inner table */
   auto InnerTableSchema() const -> const Schema & { return *inner_table_schema_; }
 
-  BUSTUB_PLAN_NODE_CLONE_WITH_CHILDREN(NestedIndexJoinPlanNode);
+  auto CloneWithChildren(std ::vector<AbstractPlanNodeRef> children) const
+      -> std ::unique_ptr<AbstractPlanNode> override {
+    auto plan_node = NestedIndexJoinPlanNode(*this);
+    plan_node.children_ = children;
+    return std ::make_unique<NestedIndexJoinPlanNode>(std ::move(plan_node));
+  };
 
   /** The nested index join predicate. */
   AbstractExpressionRef key_predicate_;

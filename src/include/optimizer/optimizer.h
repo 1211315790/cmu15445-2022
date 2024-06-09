@@ -93,10 +93,32 @@ class Optimizer {
    * @brief optimize sort + limit as top N
    */
   auto OptimizeSortLimitAsTopN(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef;
+  /**
+   * @brief optimize table cardinality
+   */
+  auto OptimizeJoinOrder(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef;
+
+  auto OptimizePredicatePushDown(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef;
+
+  auto OptimizeFalseFilter(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef;
+
+  auto IsPredicateFalse(const AbstractExpression &expr) -> bool;
+
+  auto OptimizeRemoveJoin(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef;
+  // optimize p1
+  auto OptimizeNestedLoopJoinAndNestedIndexJoin(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef;
+
+  // optimize p3
+  auto OptimizeColumnPruning(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef;
+  auto CheckArithMetic(const AbstractExpressionRef &expr) -> bool;
+  void ParseExprForColumnPruning(const AbstractExpressionRef &expr, std::vector<uint32_t> &output_cols);
+  void GetOutputCols(const std::vector<AbstractExpressionRef> &exprs, std::vector<uint32_t> &output_cols);
+  auto GetSchema(const SchemaRef &schema, std::vector<uint32_t> &output_cols, size_t group_by_nums) -> SchemaRef;
+  auto CheckColumnValue(const AbstractExpressionRef &expr) -> bool;
 
   /**
-   * @brief get the estimated cardinality for a table based on the table name. Useful when join reordering. BusTub
-   * doesn't support statistics for now, so it's the only way for you to get the table size :(
+   * @brief get the estimated cardinality for a table based on the table name. Useful when join reordering.
+   * BusTub doesn't support statistics for now, so it's the only way for you to get the table size :(
    *
    * @param table_name
    * @return std::optional<size_t>

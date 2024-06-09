@@ -1,7 +1,22 @@
 #include "optimizer/optimizer.h"
+#include <algorithm>
+#include <cstddef>
+#include <memory>
 #include <optional>
+#include <unordered_set>
+#include <utility>
+#include "catalog/schema.h"
+#include "common/macros.h"
 #include "common/util/string_util.h"
+#include "execution/expressions/column_value_expression.h"
+#include "execution/expressions/comparison_expression.h"
 #include "execution/plans/abstract_plan.h"
+#include "execution/plans/hash_join_plan.h"
+#include "execution/plans/mock_scan_plan.h"
+#include "execution/plans/nested_index_join_plan.h"
+#include "execution/plans/nested_loop_join_plan.h"
+#include "execution/plans/seq_scan_plan.h"
+#include "fmt/core.h"
 
 namespace bustub {
 

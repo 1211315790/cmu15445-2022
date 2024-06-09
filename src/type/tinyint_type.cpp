@@ -17,6 +17,7 @@
 
 #include "common/exception.h"
 #include "type/tinyint_type.h"
+#include "type/type.h"
 
 namespace bustub {
 #define TINYINT_COMPARE_FUNC(OP)                                          \
@@ -318,6 +319,12 @@ auto TinyintType::CastAs(const Value &val, const TypeId type_id) const -> Value 
         return {TypeId::VARCHAR, nullptr, 0, false};
       }
       return {TypeId::VARCHAR, val.ToString()};
+    }
+    case TypeId::BOOLEAN: {
+      if (val.IsNull()) {
+        return {TypeId::BOOLEAN, 0};
+      }
+      return {type_id, static_cast<int8_t>(val.GetAs<int8_t>() != 0)};
     }
     default:
       break;

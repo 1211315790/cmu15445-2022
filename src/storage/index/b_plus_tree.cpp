@@ -36,7 +36,9 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
   root_latch_.RLock();
   // find the leaf page that contains the key
   Page *page = FindLeaf(key, OperationType::SEARCH, transaction);
-  BUSTUB_ASSERT(page != nullptr, "FindLeaf failed");
+  if (page == nullptr) {
+    return false;
+  }
   auto leaf_page = reinterpret_cast<LeafPage *>(page->GetData());
   std::optional<ValueType> ret = leaf_page->LookUp(key, comparator_);
   page->RUnlatch();
@@ -60,7 +62,9 @@ auto BPLUSTREE_TYPE::FindLeaf(const KeyType &key, OperationType operation_type, 
   }
 
   Page *page = buffer_pool_manager_->FetchPage(root_page_id_);
-  BUSTUB_ASSERT(page != nullptr, "FetchPage failed");
+  if (page == nullptr) {
+    return nullptr;
+  }
   auto node = reinterpret_cast<BPlusTreePage *>(page->GetData());
   if (operation_type == OperationType::SEARCH) {
     page->RLatch();
@@ -157,6 +161,9 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
     return true;
   }
   Page *leaf_page = FindLeaf(key, OperationType::INSERT, transaction);
+  if (leaf_page == nullptr) {
+    return false;
+  }
   auto leaf_node = reinterpret_cast<LeafPage *>(leaf_page->GetData());
 
   // duplicate key
@@ -300,6 +307,10 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
     return;
   }
   Page *leaf_page = FindLeaf(key, OperationType::DELETE, transaction);
+  if (leaf_page == nullptr) {
+    ReleaseLatchFromQueue(transaction);
+    return;
+  }
   auto leaf_node = reinterpret_cast<LeafPage *>(leaf_page->GetData());
   if (RemoveEntry(leaf_node, key, transaction)) {
     leaf_page->WUnlatch();

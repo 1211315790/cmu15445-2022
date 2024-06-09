@@ -96,7 +96,12 @@ auto main(int argc, char **argv) -> int {
 
     try {
       auto writer = bustub::FortTableWriter();
+      // 测试ExecuteSql时间
+      auto start = std::chrono::steady_clock::now();
       bustub->ExecuteSql(query, writer);
+      auto end = std::chrono::steady_clock::now();
+      auto diff = end - start;
+      fmt::print("Time: {} ms\n", std::chrono::duration<double, std::milli>(diff).count());
       for (const auto &table : writer.tables_) {
         std::cout << table;
       }
