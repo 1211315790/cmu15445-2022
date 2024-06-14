@@ -18,13 +18,23 @@ namespace bustub {
 
 DeleteExecutor::DeleteExecutor(ExecutorContext *exec_ctx, const DeletePlanNode *plan,
                                std::unique_ptr<AbstractExecutor> &&child_executor)
-    : AbstractExecutor(exec_ctx), child_executor_(std::move(child_executor)) {
-  plan_ = plan;
+    : AbstractExecutor(exec_ctx), plan_(plan), child_executor_(std::move(child_executor)) {
   table_info_ = exec_ctx_->GetCatalog()->GetTable(plan_->TableOid());
-  table_indexes_ = exec_ctx_->GetCatalog()->GetTableIndexes(table_info_->name_);
 }
 
-void DeleteExecutor::Init() { child_executor_->Init(); }
+void DeleteExecutor::Init() {
+  child_executor_->Init();
+  try {
+    bool is_locked = exec_ctx_->GetLockManager()->LockTable(
+        exec_ctx_->GetTransaction(), LockManager::LockMode::INTENTION_EXCLUSIVE, table_info_->oid_);
+    if (!is_locked) {
+      throw ExecutionException("Delete Executor Get Table Lock Failed");
+    }
+  } catch (TransactionAbortException &e) {
+    throw ExecutionException("Delete Executor Get Table Lock Failed");
+  }
+  table_indexes_ = exec_ctx_->GetCatalog()->GetTableIndexes(table_info_->name_);
+}
 
 auto DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
   if (is_end_) {
@@ -34,6 +44,15 @@ auto DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
   RID emit_rid;
   int32_t delete_count = 0;
   while (child_executor_->Next(&to_delete_tuple, &emit_rid)) {
+    try {
+      bool ret = exec_ctx_->GetLockManager()->LockRow(exec_ctx_->GetTransaction(), LockManager::LockMode::EXCLUSIVE,
+                                                      table_info_->oid_, emit_rid);
+      if (!ret) {
+        throw ExecutionException("Delete Executor Get Row Lock Failed");
+      }
+    } catch (TransactionAbortException &e) {
+      throw ExecutionException("Delete Executor Get Row Lock Failed");
+    }
     auto deleted = table_info_->table_->MarkDelete(emit_rid, exec_ctx_->GetTransaction());
     if (deleted) {
       auto update_index = [&](IndexInfo *index_info) {

@@ -19,11 +19,20 @@ namespace bustub {
 InsertExecutor::InsertExecutor(ExecutorContext *exec_ctx, const InsertPlanNode *plan,
                                std::unique_ptr<AbstractExecutor> &&child_executor)
     : AbstractExecutor(exec_ctx), plan_(plan), child_executor_(std::move(child_executor)) {
-  table_info_ = exec_ctx->GetCatalog()->GetTable(plan_->TableOid());
+  table_info_ = exec_ctx_->GetCatalog()->GetTable(plan_->TableOid());
 }
 
 void InsertExecutor::Init() {
   child_executor_->Init();
+  try {
+    bool ret = exec_ctx_->GetLockManager()->LockTable(exec_ctx_->GetTransaction(),
+                                                      LockManager::LockMode::INTENTION_EXCLUSIVE, table_info_->oid_);
+    if (!ret) {
+      throw ExecutionException("Insert Executor Get Table Lock Failed");
+    }
+  } catch (TransactionAbortException &e) {
+    throw ExecutionException("Insert Executor Get Table Lock Failed" + e.GetInfo());
+  }
   table_indexes_ = exec_ctx_->GetCatalog()->GetTableIndexes(table_info_->name_);
 }
 
@@ -38,12 +47,22 @@ auto InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
   while (child_executor_->Next(&to_insert_tuple, &emit_rid)) {
     bool inserted = table_info_->table_->InsertTuple(to_insert_tuple, rid, exec_ctx_->GetTransaction());  // 插入成功
     if (inserted) {
+      try {
+        bool ret = exec_ctx_->GetLockManager()->LockRow(exec_ctx_->GetTransaction(), LockManager::LockMode::EXCLUSIVE,
+                                                        table_info_->oid_, *rid);
+        if (!ret) {
+          throw ExecutionException("Insert Executor Get Row Lock Failed");
+        }
+      } catch (TransactionAbortException &e) {
+        throw ExecutionException("Insert Executor Get Row Lock Failed");
+      }
       auto update_index = [&](IndexInfo *index_info) {
         auto index_key = to_insert_tuple.KeyFromTuple(table_info_->schema_, index_info->key_schema_,
                                                       index_info->index_->GetKeyAttrs());
         index_info->index_->InsertEntry(index_key, *rid, exec_ctx_->GetTransaction());
       };
       std::for_each(std::begin(table_indexes_), std::end(table_indexes_), update_index);  // 更新索引
+
       insert_count++;
     } else {
       LOG_ERROR("insert failed!");

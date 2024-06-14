@@ -16,6 +16,7 @@
 #include "execution/plans/abstract_plan.h"
 #include "execution/plans/aggregation_plan.h"
 #include "execution/plans/filter_plan.h"
+#include "execution/plans/index_scan_plan.h"
 #include "execution/plans/mock_scan_plan.h"
 #include "execution/plans/nested_index_join_plan.h"
 #include "execution/plans/nested_loop_join_plan.h"
@@ -35,6 +36,8 @@ namespace bustub {
 auto Optimizer::OptimizeCustom(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef {
   auto p = plan;
   p = OptimizeMergeProjection(p);
+  p = OptimizeMergeFilterIndexScan(p);
+  p = OptimizeMergeFilterScan(p);
   p = OptimizeMergeFilterNLJ(p);
   p = OptimizeNLJAsIndexJoin(p);
   p = OptimizePredicatePushDown(p);
@@ -47,6 +50,48 @@ auto Optimizer::OptimizeCustom(const AbstractPlanNodeRef &plan) -> AbstractPlanN
   p = OptimizeOrderByAsIndexScan(p);
   p = OptimizeSortLimitAsTopN(p);
   return p;
+}
+auto Optimizer::OptimizeMergeFilterIndexScan(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef {
+  std::vector<AbstractPlanNodeRef> children;
+  for (const auto &child : plan->GetChildren()) {
+    children.emplace_back(OptimizeMergeFilterIndexScan(child));
+  }
+
+  auto optimized_plan = plan->CloneWithChildren(std::move(children));
+
+  if (optimized_plan->GetType() == PlanType::Filter) {
+    const auto &filter_plan = dynamic_cast<const FilterPlanNode &>(*optimized_plan);
+    BUSTUB_ASSERT(optimized_plan->children_.size() == 1, "must have exactly one children");
+    const auto &child_plan = *optimized_plan->children_[0];
+    if (child_plan.GetType() == PlanType::SeqScan) {
+      const auto &seq_scan_plan = dynamic_cast<const SeqScanPlanNode &>(child_plan);
+      const auto *table_info = catalog_.GetTable(seq_scan_plan.GetTableOid());
+      const auto indices = catalog_.GetTableIndexes(table_info->name_);
+      if (indices.empty()) {
+        return optimized_plan;
+      }
+      if (const auto *expr = dynamic_cast<const ComparisonExpression *>(filter_plan.GetPredicate().get());
+          expr != nullptr) {
+        if (expr->comp_type_ == ComparisonType::Equal) {
+          if (const auto *left_expr = dynamic_cast<const ColumnValueExpression *>(expr->children_[0].get());
+              left_expr != nullptr) {
+            if (const auto *right_expr = dynamic_cast<const ConstantValueExpression *>(expr->children_[1].get());
+                right_expr != nullptr) {
+              for (const auto *index : indices) {
+                const auto &columns = index->key_schema_.GetColumns();
+                if (columns.size() == 1 &&
+                    columns[0].GetName() == table_info->schema_.GetColumn(left_expr->GetColIdx()).GetName()) {
+                  return std::make_shared<IndexScanPlanNode>(optimized_plan->output_schema_, index->index_oid_,
+                                                             filter_plan.GetPredicate());
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return optimized_plan;
 }
 auto Optimizer::OptimizeJoinOrder(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef {
   std::vector<AbstractPlanNodeRef> children;

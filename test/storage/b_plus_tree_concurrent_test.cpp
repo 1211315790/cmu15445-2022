@@ -603,7 +603,7 @@ void MixTest4Call() {
  * Score: 5
  * Description: Concurrently insert a set of keys.
  */
-TEST(BPlusTreeTestC2Con, DISABLED_InsertTest1) {
+TEST(BPlusTreeTestC2Con, InsertTest1) {
   TEST_TIMEOUT_BEGIN
   InsertTest1Call();
   remove("test.db");
@@ -616,7 +616,7 @@ TEST(BPlusTreeTestC2Con, DISABLED_InsertTest1) {
  * Description: Split the concurrent insert test to multiple threads
  * without overlap.
  */
-TEST(BPlusTreeTestC2Con, DISABLED_InsertTest2) {
+TEST(BPlusTreeTestC2Con, InsertTest2) {
   TEST_TIMEOUT_BEGIN
   InsertTest2Call();
   remove("test.db");
@@ -628,7 +628,7 @@ TEST(BPlusTreeTestC2Con, DISABLED_InsertTest2) {
  * Score: 5
  * Description: Concurrently delete a set of keys.
  */
-TEST(BPlusTreeTestC2Con, DISABLED_DeleteTest1) {
+TEST(BPlusTreeTestC2Con, DeleteTest1) {
   TEST_TIMEOUT_BEGIN
   DeleteTest1Call();
   remove("test.db");
@@ -641,7 +641,7 @@ TEST(BPlusTreeTestC2Con, DISABLED_DeleteTest1) {
  * Description: Split the concurrent delete task to multiple threads
  * without overlap.
  */
-TEST(BPlusTreeTestC2Con, DISABLED_DeleteTest2) {
+TEST(BPlusTreeTestC2Con, DeleteTest2) {
   TEST_TIMEOUT_BEGIN
   DeleteTest2Call();
   remove("test.db");
@@ -656,7 +656,7 @@ TEST(BPlusTreeTestC2Con, DISABLED_DeleteTest2) {
  * insert different set of keys. Check if all old keys are
  * deleted and new keys are added correctly.
  */
-TEST(BPlusTreeTestC2Con, DISABLED_MixTest1) {
+TEST(BPlusTreeTestC2Con, MixTest1) {
   TEST_TIMEOUT_BEGIN
   MixTest1Call();
   remove("test.db");
@@ -672,7 +672,7 @@ TEST(BPlusTreeTestC2Con, DISABLED_MixTest1) {
  * Check all the keys get are the same set of keys as previously
  * inserted.
  */
-TEST(BPlusTreeTestC2Con, DISABLED_MixTest2) {
+TEST(BPlusTreeTestC2Con, MixTest2) {
   TEST_TIMEOUT_BEGIN
   MixTest2Call();
   remove("test.db");
@@ -687,7 +687,7 @@ TEST(BPlusTreeTestC2Con, DISABLED_MixTest2) {
  * insert different set of keys. Check if all old keys are
  * deleted and new keys are added correctly.
  */
-TEST(BPlusTreeTestC2Con, DISABLED_MixTest3) {
+TEST(BPlusTreeTestC2Con, MixTest3) {
   TEST_TIMEOUT_BEGIN
   MixTest3Call();
   remove("test.db");
@@ -695,7 +695,7 @@ TEST(BPlusTreeTestC2Con, DISABLED_MixTest3) {
   TEST_TIMEOUT_FAIL_END(1000 * 600)
 }
 
-TEST(BPlusTreeTestC2Con, DISABLED_MixTest4) {
+TEST(BPlusTreeTestC2Con, MixTest4) {
   TEST_TIMEOUT_BEGIN
   MixTest4Call();
   remove("test.db");
@@ -708,7 +708,7 @@ TEST(BPlusTreeTestC2Con, DISABLED_MixTest4) {
  * Description: The same test that has been run for checkpoint 1,
  * but added iterator for value checking
  */
-TEST(BPlusTreeConcurrentTestC2Seq, DISABLED_InsertTest1) {
+TEST(BPlusTreeConcurrentTestC2Seq, InsertTest1) {
   // create KeyComparator and index schema
   auto key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema.get());
@@ -771,7 +771,7 @@ TEST(BPlusTreeConcurrentTestC2Seq, DISABLED_InsertTest1) {
  * Description: The same test that has been run for checkpoint 1
  * but added iterator for value checking
  */
-TEST(BPlusTreeConcurrentTestC2Seq, DISABLED_InsertTest2) {
+TEST(BPlusTreeConcurrentTestC2Seq, InsertTest2) {
   // create KeyComparator and index schema
   auto key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema.get());
@@ -845,7 +845,7 @@ TEST(BPlusTreeConcurrentTestC2Seq, DISABLED_InsertTest2) {
  * check the the inserted keys. Then delete a subset of the keys.
  * Finally use the iterator to check the remained keys.
  */
-TEST(BPlusTreeConcurrentTestC2Seq, DISABLED_DeleteTest1) {
+TEST(BPlusTreeConcurrentTestC2Seq, DeleteTest1) {
   // create KeyComparator and index schema
   std::string createStmt = "a bigint";
   auto key_schema = ParseCreateStatement(createStmt);
@@ -928,7 +928,7 @@ TEST(BPlusTreeConcurrentTestC2Seq, DISABLED_DeleteTest1) {
  * Description: Similar to DeleteTest2, except that, during the Remove step,
  * a different subset of keys are removed.
  */
-TEST(BPlusTreeConcurrentTestC2Seq, DISABLED_DeleteTest2) {
+TEST(BPlusTreeConcurrentTestC2Seq, DeleteTest2) {
   // create KeyComparator and index schema
   auto key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema.get());
@@ -1016,7 +1016,7 @@ TEST(BPlusTreeConcurrentTestC2Seq, DISABLED_DeleteTest2) {
  * through the inserted keys. Then remove 9900 inserted keys. Finally, use
  * the iterator to check the correctness of the remaining keys.
  */
-TEST(BPlusTreeConcurrentTestC2Seq, DISABLED_ScaleTest) {
+TEST(BPlusTreeConcurrentTestC2Seq, ScaleTest) {
   // create KeyComparator and index schema
   auto key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema.get());

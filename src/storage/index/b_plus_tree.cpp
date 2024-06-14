@@ -156,7 +156,7 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
     root_page->Init(page->GetPageId(), INVALID_PAGE_ID, leaf_max_size_);
     BUSTUB_ASSERT(root_page->Insert(key, value, comparator_), "Insert failed");
     buffer_pool_manager_->UnpinPage(page->GetPageId(), true);
-    UpdateRootPageId(1);
+    // UpdateRootPageId(1);
     ReleaseLatchFromQueue(transaction);
     return true;
   }
